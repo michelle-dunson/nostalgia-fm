@@ -52,6 +52,12 @@
   cursor: not-allowed;
 }
 
+.validationError {
+  font-size: 0.85rem;
+  color: #e87c7c;
+  text-align: center;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .button:not(:disabled):hover {
     background: var(--color-accent-glow);

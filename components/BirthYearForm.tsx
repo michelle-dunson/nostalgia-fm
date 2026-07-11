@@ -17,15 +17,23 @@ export function BirthYearForm({
   onSubmit,
 }: BirthYearFormProps) {
   const [birthYear, setBirthYear] = useState("");
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const year = Number(birthYear);
 
-    if (!Number.isInteger(year) || year < minYear || year > maxYear) {
+    if (!Number.isInteger(year)) {
+      setValidationError("Enter a whole year, e.g. 1990.");
       return;
     }
 
+    if (year < minYear || year > maxYear) {
+      setValidationError(`Enter a year between ${minYear} and ${maxYear}.`);
+      return;
+    }
+
+    setValidationError(null);
     onSubmit(year);
   }
 
@@ -42,13 +50,19 @@ export function BirthYearForm({
         min={minYear}
         max={maxYear}
         value={birthYear}
-        onChange={(event) => setBirthYear(event.target.value)}
+        onChange={(event) => {
+          setBirthYear(event.target.value);
+          setValidationError(null);
+        }}
         disabled={isLoading}
         required
       />
       <button type="submit" className={styles.button} disabled={isLoading}>
         {isLoading ? "Generating..." : "Generate Playlist"}
       </button>
+      {validationError && (
+        <p className={styles.validationError}>{validationError}</p>
+      )}
     </form>
   );
 }
