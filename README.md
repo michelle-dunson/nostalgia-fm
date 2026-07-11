@@ -10,7 +10,13 @@ A nostalgic playlist generator based on birth year. Enter your birth year and No
 cp .env.example .env.local
 ```
 
-2. Add your [Spotify Developer](https://developer.spotify.com/dashboard) credentials to `.env.local`.
+2. Add your [Spotify Developer](https://developer.spotify.com/dashboard) credentials to `.env.local`, and register this redirect URI in your Spotify app settings:
+
+```
+http://127.0.0.1:3001/api/auth/callback
+```
+
+Spotify does not allow `localhost` — you must use `127.0.0.1`.
 
 3. Run the development server:
 
@@ -18,7 +24,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the app.
+Open [http://127.0.0.1:3001](http://127.0.0.1:3001) to see the app (use this URL, not `localhost`).
 
 ## Stack
 

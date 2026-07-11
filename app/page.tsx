@@ -1,6 +1,12 @@
 import styles from "./page.module.css";
 
-export default function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ spotify?: string; reason?: string }>;
+}) {
+  const params = await searchParams;
+
   return (
     <div className={styles.page}>
       <div className={styles.scanlines} aria-hidden="true" />
@@ -43,6 +49,20 @@ export default function Home() {
           <p className={styles.comingSoon}>
             Playlist generation coming in the next step.
           </p>
+
+          <div className={styles.authSection}>
+            <a href="/api/auth/spotify" className={styles.spotifyLink}>
+              Connect Spotify
+            </a>
+            {params.spotify === "connected" && (
+              <p className={styles.authSuccess}>Spotify connected successfully.</p>
+            )}
+            {params.spotify === "error" && (
+              <p className={styles.authError}>
+                Spotify connection failed{params.reason ? `: ${params.reason}` : "."}
+              </p>
+            )}
+          </div>
         </section>
 
         <footer className={styles.footer}>
