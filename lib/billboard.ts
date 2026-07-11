@@ -100,7 +100,7 @@ export async function getChartForDate(
 
 export async function getChartForYear(
   year: number,
-  topN = 15,
+  topN = 100,
 ): Promise<{ date: string; songs: BillboardSong[] }> {
   const validDates = await getValidDates();
   const chartDate = resolveNearestChartDate(year, validDates);

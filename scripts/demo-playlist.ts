@@ -1,4 +1,5 @@
-import { generatePlaylist, groupTracksByStage } from "../lib/playlist-generator";
+import { generatePlaylist } from "../lib/playlist-generator";
+import { groupTracksByStage } from "../lib/playlist-utils";
 
 const birthYear = Number(process.argv[2] ?? 1990);
 
