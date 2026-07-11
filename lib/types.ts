@@ -31,4 +31,12 @@ export interface GeneratedPlaylist {
   birthYear: number;
   tracks: PlaylistTrack[];
   stages: Timeframe[];
+  stageSummaries: StageSummary[];
+}
+
+export interface StageSummary {
+  stage: LifeStage;
+  label: string;
+  requested: number;
+  matched: number;
 }
