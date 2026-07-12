@@ -1,9 +1,9 @@
 export type LifeStage =
-  | "early_years"
+  | "childhood"
   | "middle_school"
-  | "prom"
+  | "high_school"
   | "college"
-  | "adulthood";
+  | "post_grad";
 
 export interface StageDefinition {
   stage: LifeStage;

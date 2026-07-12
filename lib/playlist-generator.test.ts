@@ -1,34 +1,43 @@
 import { describe, expect, it } from "vitest";
-import { candidateKey, getBonusStageTargets, shuffle } from "./playlist-generator";
-import type { Timeframe } from "./types";
+import { candidateKey, distributeTrackCount, getStageWeights, maxSearchAttempts, shuffle } from "./playlist-generator";
 
-const allStages: Timeframe[] = [
-  { stage: "early_years", label: "Early Years", years: [1997, 1998] },
-  { stage: "middle_school", label: "Middle School Years", years: [2003, 2004] },
-  { stage: "prom", label: "Junior/Senior Prom", years: [2007, 2008] },
-  { stage: "college", label: "College Years", years: [2010, 2011] },
-  { stage: "adulthood", label: "Entering Adulthood", years: [2014, 2015] },
-];
+describe("maxSearchAttempts", () => {
+  it("scales with target count but stays capped", () => {
+    expect(maxSearchAttempts(4)).toBe(12);
+    expect(maxSearchAttempts(10)).toBe(15);
+    expect(maxSearchAttempts(1)).toBe(6);
+  });
+});
 
-describe("getBonusStageTargets", () => {
-  it("splits 6 bonus tracks between prom and college when all stages are present", () => {
-    const targets = getBonusStageTargets(allStages);
-    expect(targets).toHaveLength(2);
-    expect(targets[0]).toMatchObject({ timeframe: { stage: "prom" }, count: 3 });
-    expect(targets[1]).toMatchObject({ timeframe: { stage: "college" }, count: 3 });
+describe("distributeTrackCount", () => {
+  it("splits evenly across years", () => {
+    expect(distributeTrackCount(10, 3)).toEqual([4, 3, 3]);
   });
 
-  it("targets middle school and prom when entering adulthood is missing", () => {
-    const withoutAdulthood = allStages.slice(0, 4);
-    const targets = getBonusStageTargets(withoutAdulthood);
-    expect(targets).toHaveLength(2);
-    expect(targets[0].timeframe.stage).toBe("middle_school");
-    expect(targets[1].timeframe.stage).toBe("prom");
-    expect(targets.reduce((sum, target) => sum + target.count, 0)).toBe(6);
+  it("returns a single bucket for one year", () => {
+    expect(distributeTrackCount(50, 1)).toEqual([50]);
+  });
+});
+
+describe("getStageWeights", () => {
+  it("returns 50 songs for one stage", () => {
+    expect(getStageWeights(1)).toEqual([50]);
   });
 
-  it("returns no bonus targets when only one stage is eligible", () => {
-    expect(getBonusStageTargets([allStages[0]])).toEqual([]);
+  it("returns 25 songs each for two stages", () => {
+    expect(getStageWeights(2)).toEqual([25, 25]);
+  });
+
+  it("weights middle school highest for three stages", () => {
+    expect(getStageWeights(3)).toEqual([15, 20, 15]);
+  });
+
+  it("returns the four-stage distribution", () => {
+    expect(getStageWeights(4)).toEqual([10, 15, 15, 10]);
+  });
+
+  it("returns 10 songs each for five stages", () => {
+    expect(getStageWeights(5)).toEqual([10, 10, 10, 10, 10]);
   });
 });
 

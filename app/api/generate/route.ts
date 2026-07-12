@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { generatePlaylist } from "@/lib/playlist-generator";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 interface GenerateRequestBody {
   birthYear?: unknown;

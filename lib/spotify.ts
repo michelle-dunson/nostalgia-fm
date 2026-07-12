@@ -27,8 +27,13 @@ interface SpotifySearchResponse {
 
 const TOKEN_URL = "https://accounts.spotify.com/api/token";
 const API_BASE = "https://api.spotify.com/v1";
+const MIN_REQUEST_INTERVAL_MS = 200;
+const REQUEST_TIMEOUT_MS = 8_000;
+const MAX_429_WAIT_MS = 2_000;
 
 let tokenCache: { accessToken: string; expiresAt: number } | null = null;
+let lastRequestAt = 0;
+const searchCache = new Map<string, SpotifyTrackMatch | null>();
 
 function getSpotifyCredentials(): { clientId: string; clientSecret: string } {
   const clientId = process.env.SPOTIFY_CLIENT_ID;
@@ -41,6 +46,49 @@ function getSpotifyCredentials(): { clientId: string; clientSecret: string } {
   }
 
   return { clientId, clientSecret };
+}
+
+function searchCacheKey(title: string, artist: string): string {
+  return `${title.toLowerCase()}::${artist.toLowerCase()}`;
+}
+
+async function throttleRequests(): Promise<void> {
+  const now = Date.now();
+  const waitMs = MIN_REQUEST_INTERVAL_MS - (now - lastRequestAt);
+  if (waitMs > 0) {
+    await new Promise((resolve) => setTimeout(resolve, waitMs));
+  }
+  lastRequestAt = Date.now();
+}
+
+
+async function spotifyFetch(
+  url: string,
+  options: RequestInit,
+): Promise<Response> {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await throttleRequests();
+    const response = await fetch(url, {
+      ...options,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+
+    if (response.status !== 429 || attempt === 1) {
+      return response;
+    }
+
+    const retryAfterHeader = response.headers.get("Retry-After");
+    const retryAfterSeconds = retryAfterHeader
+      ? Number.parseInt(retryAfterHeader, 10)
+      : Number.NaN;
+    const delayMs = Number.isFinite(retryAfterSeconds)
+      ? Math.min(retryAfterSeconds * 1000, MAX_429_WAIT_MS)
+      : MAX_429_WAIT_MS;
+
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  throw new Error("Spotify request failed.");
 }
 
 export function buildTrackSearchQuery(title: string, artist: string): string {
@@ -86,11 +134,15 @@ async function searchWithQuery(
     limit: "5",
   });
 
-  const response = await fetch(`${API_BASE}/search?${params}`, {
+  const response = await spotifyFetch(`${API_BASE}/search?${params}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
+
+  if (response.status === 429) {
+    return null;
+  }
 
   if (!response.ok) {
     throw new Error(
@@ -112,7 +164,7 @@ async function getClientCredentialsToken(): Promise<string> {
     "base64",
   );
 
-  const response = await fetch(TOKEN_URL, {
+  const response = await spotifyFetch(TOKEN_URL, {
     method: "POST",
     headers: {
       Authorization: `Basic ${credentials}`,
@@ -139,7 +191,13 @@ async function getClientCredentialsToken(): Promise<string> {
 export async function searchTrack(
   title: string,
   artist: string,
+  options?: { maxQueries?: number },
 ): Promise<SpotifyTrackMatch | null> {
+  const cacheKey = searchCacheKey(title, artist);
+  if (searchCache.has(cacheKey)) {
+    return searchCache.get(cacheKey) ?? null;
+  }
+
   const token = await getClientCredentialsToken();
   const primaryArtist = getPrimaryArtist(artist);
 
@@ -149,17 +207,31 @@ export async function searchTrack(
   ];
 
   const uniqueQueries = [...new Set(queries)];
+  const limitedQueries = uniqueQueries.slice(
+    0,
+    options?.maxQueries ?? uniqueQueries.length,
+  );
 
-  for (const query of uniqueQueries) {
-    const match = await searchWithQuery(token, query, primaryArtist);
-    if (match) {
-      return match;
+  for (const query of limitedQueries) {
+    try {
+      const match = await searchWithQuery(token, query, primaryArtist);
+      if (match) {
+        searchCache.set(cacheKey, match);
+        return match;
+      }
+    } catch {
+      return null;
     }
   }
 
+  searchCache.set(cacheKey, null);
   return null;
 }
 
 export function clearSpotifyTokenCache(): void {
   tokenCache = null;
+}
+
+export function clearSpotifySearchCache(): void {
+  searchCache.clear();
 }

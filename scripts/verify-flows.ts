@@ -1,26 +1,23 @@
 import { getEligibleTimeframes } from "../lib/age-ranges";
-import { generatePlaylist, getBonusStageTargets } from "../lib/playlist-generator";
+import { generatePlaylist, getStageWeights, TOTAL_TRACKS } from "../lib/playlist-generator";
 
 const REFERENCE_YEAR = 2026;
 
 interface TestCase {
   birthYear: number;
   expectedStages: number;
-  expectedMinTracks: number;
   shouldFail?: boolean;
 }
 
 const cases: TestCase[] = [
-  { birthYear: 1990, expectedStages: 5, expectedMinTracks: 25 },
-  { birthYear: 1999, expectedStages: 4, expectedMinTracks: 20 },
-  { birthYear: 2004, expectedStages: 2, expectedMinTracks: 10 },
-  { birthYear: 2014, expectedStages: 0, expectedMinTracks: 0, shouldFail: true },
+  { birthYear: 1990, expectedStages: 5 },
+  { birthYear: 1999, expectedStages: 4 },
+  { birthYear: 2004, expectedStages: 2 },
+  { birthYear: 2012, expectedStages: 0, shouldFail: true },
 ];
 
 function expectedTrackCount(stages: ReturnType<typeof getEligibleTimeframes>): number {
-  const base = stages.length * 5;
-  const bonus = getBonusStageTargets(stages).reduce((sum, t) => sum + t.count, 0);
-  return base + bonus;
+  return getStageWeights(stages.length).reduce((sum, weight) => sum + weight, 0);
 }
 
 async function main() {
@@ -52,9 +49,14 @@ async function main() {
     const playlist = await generatePlaylist(testCase.birthYear, REFERENCE_YEAR);
     const expected = expectedTrackCount(stages);
 
-    if (playlist.tracks.length < testCase.expectedMinTracks) {
+    if (expected !== TOTAL_TRACKS) {
+      console.log(`FAIL (weighting does not total ${TOTAL_TRACKS})`);
+      continue;
+    }
+
+    if (playlist.tracks.length > TOTAL_TRACKS) {
       console.log(
-        `FAIL (expected >= ${testCase.expectedMinTracks} tracks, got ${playlist.tracks.length})`,
+        `FAIL (expected at most ${TOTAL_TRACKS} tracks, got ${playlist.tracks.length})`,
       );
       continue;
     }

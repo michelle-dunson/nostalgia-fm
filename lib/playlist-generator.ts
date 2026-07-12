@@ -1,13 +1,22 @@
 import { getEligibleTimeframes, validateBirthYear } from "./age-ranges";
-import { getChartForYear, type BillboardSong } from "./billboard";
+import { getSongsForYear, type BillboardSong } from "./billboard";
 import { searchTrack } from "./spotify";
 import type { GeneratedPlaylist, PlaylistTrack, StageSummary, Timeframe } from "./types";
 
-const SONGS_PER_STAGE = 5;
-const BONUS_TRACKS_TOTAL = 6;
-const INITIAL_POOL_SIZE = 15;
-const EXPANDED_POOL_SIZE = 25;
-const SEARCH_DELAY_MS = 100;
+export const TOTAL_TRACKS = 50;
+
+const STAGE_WEIGHTS_BY_COUNT: Record<number, number[]> = {
+  1: [50],
+  2: [25, 25],
+  3: [15, 20, 15],
+  4: [10, 15, 15, 10],
+  5: [10, 10, 10, 10, 10],
+};
+
+const INITIAL_TOP_N_PER_CHART = 12;
+const EXPANDED_TOP_N_PER_CHART = 20;
+const SPOTIFY_SEARCH_BUDGET = 60;
+const FILL_PASS_MIN_RATIO = 0.7;
 
 interface CandidateSong extends BillboardSong {
   year: number;
@@ -26,61 +35,69 @@ export function candidateKey(title: string, artist: string): string {
   return `${title.toLowerCase()}::${artist.toLowerCase()}`;
 }
 
-export function getBonusStageTargets(
-  stages: Timeframe[],
-): Array<{ timeframe: Timeframe; count: number }> {
-  if (stages.length < 2) {
+export function getStageWeights(stageCount: number): number[] {
+  const weights = STAGE_WEIGHTS_BY_COUNT[stageCount];
+  if (!weights) {
+    throw new Error(`Unsupported stage count: ${stageCount}`);
+  }
+
+  const total = weights.reduce((sum, weight) => sum + weight, 0);
+  if (total !== TOTAL_TRACKS) {
+    throw new Error(`Stage weights must total ${TOTAL_TRACKS}, got ${total}.`);
+  }
+
+  return weights;
+}
+
+export function distributeTrackCount(total: number, buckets: number): number[] {
+  if (buckets <= 0) {
     return [];
   }
 
-  const bonusStages = stages.slice(-3, -1);
-  if (bonusStages.length === 0) {
+  const base = Math.floor(total / buckets);
+  const remainder = total % buckets;
+
+  return Array.from({ length: buckets }, (_, index) =>
+    base + (index < remainder ? 1 : 0),
+  );
+}
+
+async function collectCandidatesForYear(
+  year: number,
+  topNPerChart: number,
+): Promise<CandidateSong[]> {
+  try {
+    const songs = await getSongsForYear(year, topNPerChart);
+    return songs.map((song) => ({ ...song, year }));
+  } catch {
     return [];
   }
-
-  const baseCount = Math.floor(BONUS_TRACKS_TOTAL / bonusStages.length);
-  const remainder = BONUS_TRACKS_TOTAL % bonusStages.length;
-
-  return bonusStages.map((timeframe, index) => ({
-    timeframe,
-    count: baseCount + (index < remainder ? 1 : 0),
-  }));
 }
 
-function dedupeCandidates(candidates: CandidateSong[]): CandidateSong[] {
-  const seen = new Set<string>();
-  return candidates.filter((candidate) => {
-    const key = candidateKey(candidate.title, candidate.artist);
-    if (seen.has(key)) {
-      return false;
-    }
-    seen.add(key);
-    return true;
-  });
+export function maxSearchAttempts(targetCount: number): number {
+  return Math.min(Math.max(targetCount * 3, 6), 15);
 }
 
-async function delay(ms: number): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, ms));
+class SearchBudget {
+  constructor(private remaining: number) {}
+
+  canSearch(): boolean {
+    return this.remaining > 0;
+  }
+
+  consume(count = 1): void {
+    this.remaining = Math.max(0, this.remaining - count);
+  }
 }
 
 async function collectCandidates(
   years: number[],
-  poolSize: number,
+  topNPerChart: number,
 ): Promise<CandidateSong[]> {
-  const candidates: CandidateSong[] = [];
-
-  for (const year of years) {
-    try {
-      const chart = await getChartForYear(year, poolSize);
-      for (const song of chart.songs) {
-        candidates.push({ ...song, year });
-      }
-    } catch {
-      // Skip years with missing chart data and continue with the other year.
-    }
-  }
-
-  return dedupeCandidates(candidates);
+  const results = await Promise.all(
+    years.map((year) => collectCandidatesForYear(year, topNPerChart)),
+  );
+  return results.flat();
 }
 
 async function matchCandidates(
@@ -88,30 +105,44 @@ async function matchCandidates(
   usedUris: Set<string>,
   targetCount: number,
   stage: Timeframe["stage"],
+  budget: SearchBudget,
 ): Promise<PlaylistTrack[]> {
   const matches: PlaylistTrack[] = [];
+  const attemptLimit = maxSearchAttempts(targetCount);
 
-  for (const candidate of candidates) {
-    if (matches.length >= targetCount) {
+  for (let index = 0; index < candidates.length; index += 1) {
+    if (
+      matches.length >= targetCount ||
+      index >= attemptLimit ||
+      !budget.canSearch()
+    ) {
       break;
     }
 
-    await delay(SEARCH_DELAY_MS);
-    const spotifyMatch = await searchTrack(candidate.title, candidate.artist);
+    const candidate = candidates[index];
+    budget.consume();
 
-    if (!spotifyMatch || usedUris.has(spotifyMatch.uri)) {
-      continue;
+    try {
+      const spotifyMatch = await searchTrack(candidate.title, candidate.artist, {
+        maxQueries: 1,
+      });
+
+      if (!spotifyMatch || usedUris.has(spotifyMatch.uri)) {
+        continue;
+      }
+
+      usedUris.add(spotifyMatch.uri);
+      matches.push({
+        title: spotifyMatch.title,
+        artist: spotifyMatch.artist,
+        year: candidate.year,
+        stage,
+        spotifyUri: spotifyMatch.uri,
+        spotifyUrl: spotifyMatch.url,
+      });
+    } catch {
+      // Skip candidates that fail due to rate limits or transient API errors.
     }
-
-    usedUris.add(spotifyMatch.uri);
-    matches.push({
-      title: spotifyMatch.title,
-      artist: spotifyMatch.artist,
-      year: candidate.year,
-      stage,
-      spotifyUri: spotifyMatch.uri,
-      spotifyUrl: spotifyMatch.url,
-    });
   }
 
   return matches;
@@ -120,35 +151,51 @@ async function matchCandidates(
 async function selectTracksForStage(
   timeframe: Timeframe,
   usedUris: Set<string>,
-  targetCount: number = SONGS_PER_STAGE,
+  targetCount: number,
+  budget: SearchBudget,
 ): Promise<PlaylistTrack[]> {
-  const candidates = await collectCandidates(timeframe.years, INITIAL_POOL_SIZE);
-  let matches = await matchCandidates(
-    candidates,
-    usedUris,
+  const perYearTargets = distributeTrackCount(
     targetCount,
-    timeframe.stage,
+    timeframe.years.length,
   );
+  const matches: PlaylistTrack[] = [];
 
-  if (matches.length < targetCount) {
-    const expandedCandidates = await collectCandidates(
-      timeframe.years,
-      EXPANDED_POOL_SIZE,
+  for (let index = 0; index < timeframe.years.length; index += 1) {
+    if (!budget.canSearch()) {
+      break;
+    }
+
+    const year = timeframe.years[index];
+    const yearTarget = perYearTargets[index];
+
+    const candidates = await collectCandidatesForYear(year, INITIAL_TOP_N_PER_CHART);
+    const yearMatches = await matchCandidates(
+      shuffle(candidates),
+      usedUris,
+      yearTarget,
+      timeframe.stage,
+      budget,
     );
+    matches.push(...yearMatches);
+  }
+
+  const fillThreshold = Math.ceil(targetCount * FILL_PASS_MIN_RATIO);
+  if (matches.length < fillThreshold && budget.canSearch()) {
     const triedKeys = new Set(
-      candidates.map((song) => candidateKey(song.title, song.artist)),
+      matches.map((track) => candidateKey(track.title, track.artist)),
     );
-    const additionalCandidates = expandedCandidates.filter(
-      (song) => !triedKeys.has(candidateKey(song.title, song.artist)),
-    );
+    const fillCandidates = shuffle(
+      await collectCandidates(timeframe.years, EXPANDED_TOP_N_PER_CHART),
+    ).filter((song) => !triedKeys.has(candidateKey(song.title, song.artist)));
 
-    const moreMatches = await matchCandidates(
-      additionalCandidates,
+    const fillMatches = await matchCandidates(
+      fillCandidates,
       usedUris,
       targetCount - matches.length,
       timeframe.stage,
+      budget,
     );
-    matches = [...matches, ...moreMatches];
+    matches.push(...fillMatches);
   }
 
   return shuffle(matches);
@@ -164,30 +211,39 @@ export async function generatePlaylist(
   }
 
   const stages = getEligibleTimeframes(birthYear, referenceYear);
+  const weights = getStageWeights(stages.length);
   const usedUris = new Set<string>();
+  const searchesPerStage = Math.max(
+    10,
+    Math.ceil(SPOTIFY_SEARCH_BUDGET / stages.length),
+  );
   const stageSummaries: StageSummary[] = [];
   const tracksByStage: PlaylistTrack[] = [];
 
-  for (const timeframe of stages) {
-    const stageTracks = await selectTracksForStage(timeframe, usedUris);
+  for (let index = 0; index < stages.length; index += 1) {
+    const timeframe = stages[index];
+    const targetCount = weights[index];
+    const budget = new SearchBudget(searchesPerStage);
+    const stageTracks = await selectTracksForStage(
+      timeframe,
+      usedUris,
+      targetCount,
+      budget,
+    );
+
     stageSummaries.push({
       stage: timeframe.stage,
       label: timeframe.label,
-      requested: SONGS_PER_STAGE,
+      requested: targetCount,
       matched: stageTracks.length,
     });
     tracksByStage.push(...stageTracks);
   }
 
-  const bonusTargets = getBonusStageTargets(stages);
-  for (const { timeframe, count } of bonusTargets) {
-    const bonusTracks = await selectTracksForStage(timeframe, usedUris, count);
-    const summary = stageSummaries.find((s) => s.stage === timeframe.stage);
-    if (summary) {
-      summary.requested += count;
-      summary.matched += bonusTracks.length;
-    }
-    tracksByStage.push(...bonusTracks);
+  if (tracksByStage.length === 0) {
+    throw new Error(
+      "Could not match any songs on Spotify. Please try again in a moment.",
+    );
   }
 
   return {

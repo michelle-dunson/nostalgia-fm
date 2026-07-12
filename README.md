@@ -4,19 +4,29 @@ A nostalgic playlist generator based on birth year. Enter your birth year and No
 
 ## How it works
 
-Nostalgia.FM maps your birth year to life stages and pulls top Billboard hits from those years:
+Nostalgia.FM maps your birth year to life stages and pulls top Billboard hits from every year in each range:
 
 | Stage | Ages |
 |---|---|
-| Early years | 7–8 |
-| Middle school | 13–14 |
-| Prom | 17–18 |
-| College | 20–21 |
-| Entering adulthood | 24–25 |
+| Childhood | 8–10 |
+| Middle school | 12–14 |
+| High school | 16–18 |
+| College | 20–22 |
+| Post-grad | 24–26 |
 
-A stage is included only if you're at least 5 years past its upper age (e.g. at 27, entering adulthood is excluded).
+A stage is included only if you're at least 5 years past its upper age (e.g. at 27, post-grad is excluded).
 
-Each included stage contributes 5 songs, plus 6 bonus songs split between the two stages below your highest eligible stage. Tracks are shuffled before preview and save.
+Each playlist has **50 songs**, weighted by how many stages you have:
+
+| Stages | Distribution |
+|---|---|
+| 1 | 50 |
+| 2 | 25 each |
+| 3 | Childhood 15 · Middle school 20 · High school 15 |
+| 4 | Childhood 10 · Middle school 15 · High school 15 · College 10 |
+| 5 | 10 each |
+
+Songs are drawn from multiple Billboard charts throughout each calendar year (not just one mid-year snapshot), then shuffled before preview and save.
 
 ## Getting Started
 

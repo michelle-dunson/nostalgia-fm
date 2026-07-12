@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { MIN_BIRTH_YEAR } from "@/lib/age-ranges";
 import type { GeneratedPlaylist } from "@/lib/types";
-import { BirthYearForm } from "./BirthYearForm";
-import { PlaylistPreview } from "./PlaylistPreview";
-import { SpotifyButton } from "./SpotifyButton";
+import { BirthYearForm } from "@/components/BirthYearForm";
+import { PlaylistPreview } from "@/components/PlaylistPreview";
+import { SpotifyButton } from "@/components/SpotifyButton";
 import styles from "./NostalgiaApp.module.css";
 
 const PLAYLIST_STORAGE_KEY = "nostalgia-fm-playlist";
@@ -61,11 +61,17 @@ export function NostalgiaApp({ spotifyStatus, spotifyReason }: NostalgiaAppProps
     setSavedPlaylistUrl(null);
 
     try {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 180_000);
+
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ birthYear }),
+        signal: controller.signal,
       });
+
+      window.clearTimeout(timeoutId);
 
       const data = (await response.json()) as GeneratedPlaylist | { error: string };
 
@@ -79,6 +85,14 @@ export function NostalgiaApp({ spotifyStatus, spotifyReason }: NostalgiaAppProps
     } catch (generateError) {
       setPlaylist(null);
       sessionStorage.removeItem(PLAYLIST_STORAGE_KEY);
+
+      if (generateError instanceof DOMException && generateError.name === "AbortError") {
+        setError(
+          "Generation timed out. Spotify rate limits can slow things down — please try again in a moment.",
+        );
+        return;
+      }
+
       setError(
         generateError instanceof Error
           ? generateError.message
@@ -137,8 +151,8 @@ export function NostalgiaApp({ spotifyStatus, spotifyReason }: NostalgiaAppProps
         <h2 className={styles.cardTitle}>When were you born?</h2>
         <p className={styles.cardDescription}>
           Enter your birth year and we&apos;ll pull the Billboard hits from the
-          chapters of your life — early years, middle school, prom, college, and
-          beyond.
+          chapters of your life — childhood, middle school, high school, college,
+          and beyond.
         </p>
 
         <BirthYearForm
@@ -149,7 +163,9 @@ export function NostalgiaApp({ spotifyStatus, spotifyReason }: NostalgiaAppProps
         />
 
         {isGenerating && (
-          <p className={styles.statusMessage}>Tuning your stations...</p>
+          <p className={styles.statusMessage}>
+            Tuning your stations... this usually takes 30–60 seconds.
+          </p>
         )}
 
         {error && <p className={styles.errorMessage}>{error}</p>}
@@ -166,6 +182,12 @@ export function NostalgiaApp({ spotifyStatus, spotifyReason }: NostalgiaAppProps
 
       {playlist && (
         <section className={styles.previewSection}>
+          {playlist.tracks.length < 50 && (
+            <p className={styles.statusMessage}>
+              Found {playlist.tracks.length} tracks — Spotify rate limits sometimes
+              prevent a full 50. You can still save what we found.
+            </p>
+          )}
           <PlaylistPreview playlist={playlist} />
           <SpotifyButton
             isAuthenticated={isAuthenticated}

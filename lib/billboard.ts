@@ -21,6 +21,8 @@ interface RawBillboardChart {
 const BASE_URL =
   "https://raw.githubusercontent.com/mhollingshead/billboard-hot-100/main";
 
+const CHART_MONTHS = [2, 5, 8, 11];
+
 const validDatesCache: { dates: string[] | null } = { dates: null };
 const chartCache = new Map<string, BillboardSong[]>();
 
@@ -28,7 +30,17 @@ export function resolveNearestChartDate(
   year: number,
   validDates: string[],
 ): string {
-  const target = new Date(`${year}-07-01T12:00:00Z`).getTime();
+  return resolveNearestChartDateForMonth(year, 7, validDates);
+}
+
+export function resolveNearestChartDateForMonth(
+  year: number,
+  month: number,
+  validDates: string[],
+): string {
+  const target = new Date(
+    `${year}-${String(month).padStart(2, "0")}-15T12:00:00Z`,
+  ).getTime();
   const datesInYear = validDates.filter((date) =>
     date.startsWith(`${year}-`),
   );
@@ -46,6 +58,43 @@ export function resolveNearestChartDate(
     );
     return dateDistance < closestDistance ? date : closest;
   });
+}
+
+export function getChartDatesForYear(
+  year: number,
+  validDates: string[],
+): string[] {
+  const dates = CHART_MONTHS.map((month) => {
+    try {
+      return resolveNearestChartDateForMonth(year, month, validDates);
+    } catch {
+      return null;
+    }
+  }).filter((date): date is string => date !== null);
+
+  return [...new Set(dates)];
+}
+
+function songKey(title: string, artist: string): string {
+  return `${title.toLowerCase()}::${artist.toLowerCase()}`;
+}
+
+export function mergeBillboardSongs(
+  songGroups: BillboardSong[][],
+): BillboardSong[] {
+  const bestBySong = new Map<string, BillboardSong>();
+
+  for (const songs of songGroups) {
+    for (const song of songs) {
+      const key = songKey(song.title, song.artist);
+      const existing = bestBySong.get(key);
+      if (!existing || song.rank < existing.rank) {
+        bestBySong.set(key, song);
+      }
+    }
+  }
+
+  return Array.from(bestBySong.values()).sort((a, b) => a.rank - b.rank);
 }
 
 async function getValidDates(): Promise<string[]> {
@@ -106,6 +155,24 @@ export async function getChartForYear(
   const chartDate = resolveNearestChartDate(year, validDates);
   const chart = await getChartForDate(chartDate, topN);
   return chart;
+}
+
+export async function getSongsForYear(
+  year: number,
+  topNPerChart = 25,
+): Promise<BillboardSong[]> {
+  const validDates = await getValidDates();
+  const chartDates = getChartDatesForYear(year, validDates);
+
+  if (chartDates.length === 0) {
+    throw new Error(`No Billboard chart dates found for ${year}.`);
+  }
+
+  const charts = await Promise.all(
+    chartDates.map((date) => getChartForDate(date, topNPerChart)),
+  );
+
+  return mergeBillboardSongs(charts.map((chart) => chart.songs));
 }
 
 export function clearBillboardCache(): void {

@@ -9,11 +9,11 @@ export function groupTracksByStage(
       return groups;
     },
     {
-      early_years: [],
+      childhood: [],
       middle_school: [],
-      prom: [],
+      high_school: [],
       college: [],
-      adulthood: [],
+      post_grad: [],
     } as Record<LifeStage, PlaylistTrack[]>,
   );
 }

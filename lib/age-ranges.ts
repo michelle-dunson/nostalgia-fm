@@ -2,41 +2,41 @@ import type { StageDefinition, Timeframe } from "./types";
 
 export const STAGE_DEFINITIONS: readonly StageDefinition[] = [
   {
-    stage: "early_years",
-    label: "Early Years",
-    minAge: 7,
-    maxAge: 8,
+    stage: "childhood",
+    label: "Childhood",
+    minAge: 8,
+    maxAge: 10,
   },
   {
     stage: "middle_school",
-    label: "Middle School Years",
-    minAge: 13,
+    label: "Middle School",
+    minAge: 12,
     maxAge: 14,
   },
   {
-    stage: "prom",
-    label: "Junior/Senior Prom",
-    minAge: 17,
+    stage: "high_school",
+    label: "High School",
+    minAge: 16,
     maxAge: 18,
   },
   {
     stage: "college",
-    label: "College Years",
+    label: "College",
     minAge: 20,
-    maxAge: 21,
+    maxAge: 22,
   },
   {
-    stage: "adulthood",
-    label: "Entering Adulthood",
+    stage: "post_grad",
+    label: "Post-Grad",
     minAge: 24,
-    maxAge: 25,
+    maxAge: 26,
   },
 ] as const;
 
 export const MIN_BIRTH_YEAR = 1940;
 
 export const TOO_YOUNG_MESSAGE =
-  "Come back when you're a bit older — your nostalgia playlist needs at least 13 years of life!";
+  "Come back when you're a bit older — your nostalgia playlist needs at least 15 years of life!";
 
 export function getCurrentAge(
   birthYear: number,
@@ -57,7 +57,11 @@ export function getYearsForStage(
   birthYear: number,
   stage: StageDefinition,
 ): number[] {
-  return [birthYear + stage.minAge, birthYear + stage.maxAge];
+  const years: number[] = [];
+  for (let age = stage.minAge; age <= stage.maxAge; age += 1) {
+    years.push(birthYear + age);
+  }
+  return years;
 }
 
 export function getEligibleTimeframes(
