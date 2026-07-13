@@ -1,36 +1,47 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Source_Sans_3 } from "next/font/google";
+import {
+    IBM_Plex_Mono,
+    Instrument_Serif,
+    Space_Grotesk,
+} from "next/font/google";
 import "./globals.css";
 
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-  weight: ["400", "700", "900"],
+const spaceGrotesk = Space_Grotesk({
+    variable: "--font-space-grotesk",
+    subsets: ["latin"],
+    weight: ["400", "500", "600", "700"],
 });
 
-const sourceSans = Source_Sans_3({
-  variable: "--font-source-sans",
-  subsets: ["latin"],
-  weight: ["300", "400", "600"],
+const instrumentSerif = Instrument_Serif({
+    variable: "--font-instrument-serif",
+    subsets: ["latin"],
+    weight: ["400"],
+    style: ["italic"],
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+    variable: "--font-ibm-plex-mono",
+    subsets: ["latin"],
+    weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
-  title: "Nostalgia.FM",
-  description:
-    "A nostalgic playlist generator based on your birth year — top hits from the soundtrack of your life.",
+    title: "Nostalgia.FM",
+    description:
+        "Your life, one playlist at a time — rediscover the songs that soundtracked your childhood, first crush, road trips, and everything in between.",
 };
 
 export default function RootLayout({
-  children,
+    children,
 }: Readonly<{
-  children: React.ReactNode;
+    children: React.ReactNode;
 }>) {
-  return (
-    <html
-      lang="en"
-      className={`${playfair.variable} ${sourceSans.variable}`}
-    >
-      <body>{children}</body>
-    </html>
-  );
+    return (
+        <html
+            lang="en"
+            className={`${spaceGrotesk.variable} ${instrumentSerif.variable} ${ibmPlexMono.variable}`}
+        >
+            <body>{children}</body>
+        </html>
+    );
 }

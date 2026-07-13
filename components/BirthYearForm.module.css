@@ -1,66 +1,149 @@
 .form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    width: 100%;
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
 }
 
 .label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
+    font-family: var(--font-serif);
+    font-size: clamp(1.25rem, 3vw, 1.6rem);
+    font-style: italic;
+    color: var(--color-text-muted);
+}
+
+.inputRow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 .input {
-  padding: 0.85rem 1rem;
-  font-size: 1.1rem;
-  font-family: inherit;
-  color: var(--color-text-primary);
-  background: var(--color-bg-mid);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  outline: none;
-  transition: border-color 0.2s;
+    width: clamp(160px, 40vw, 220px);
+    padding: 0.85rem 1rem;
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 8vw, 3.75rem);
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    color: var(--color-dark);
+    background: var(--color-surface);
+    border: 3px solid var(--color-dark);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-offset);
+    outline: none;
+    transition:
+        transform var(--transition-spring),
+        box-shadow var(--transition-spring);
+    -moz-appearance: textfield;
+}
+
+.input::-webkit-outer-spin-button,
+.input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+    opacity: 0.55;
+    cursor: not-allowed;
 }
 
 .input:focus:not(:disabled) {
-  border-color: var(--color-accent-warm);
+    transform: translate(-2px, -2px);
+    box-shadow: var(--shadow-offset-hover);
 }
 
-.button {
-  margin-top: 0.5rem;
-  padding: 0.9rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--color-bg-deep);
-  background: var(--color-accent-warm);
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: background 0.2s, transform 0.15s;
+.stepper {
+    width: 44px;
+    height: 44px;
+    font-size: 1.4rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--color-dark);
+    background: var(--color-surface);
+    border: 2px solid var(--color-dark);
+    border-radius: 50%;
+    box-shadow: var(--shadow-offset-sm);
+    cursor: pointer;
+    transition:
+        transform var(--transition-spring),
+        box-shadow var(--transition-fast);
 }
 
-.button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.validationError {
-  font-size: 0.85rem;
-  color: #e87c7c;
-  text-align: center;
+.stepper:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .button:not(:disabled):hover {
-    background: var(--color-accent-glow);
-    transform: translateY(-1px);
-  }
+    .stepper:not(:disabled):hover {
+        transform: translate(-1px, -1px) rotate(-3deg);
+        box-shadow: var(--shadow-offset);
+    }
+
+    .stepper:not(:disabled):active {
+        transform: translate(2px, 2px);
+        box-shadow: none;
+    }
+}
+
+.arrow {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-burnt-orange);
+    line-height: 1;
+}
+
+.button {
+    width: 100%;
+    max-width: 360px;
+    padding: 1.1rem 2rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--color-surface);
+    background: var(--color-burnt-orange);
+    border: 3px solid var(--color-dark);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-offset);
+    cursor: pointer;
+    transition:
+        transform var(--transition-spring),
+        box-shadow var(--transition-spring),
+        background var(--transition-fast);
+}
+
+.button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .button:not(:disabled):hover {
+        transform: translate(-2px, -2px) rotate(-0.5deg);
+        box-shadow: var(--shadow-offset-hover);
+        background: #d96d24;
+    }
+
+    .button:not(:disabled):active {
+        transform: translate(3px, 3px) rotate(0.5deg);
+        box-shadow: none;
+    }
+}
+
+.validationError {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-dusty-coral);
+    text-align: center;
 }

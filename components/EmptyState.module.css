@@ -1,0 +1,68 @@
+.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    padding: 3rem 1.5rem;
+}
+
+.stack {
+    position: relative;
+    width: 140px;
+    height: 140px;
+}
+
+.sleeve {
+    position: absolute;
+    width: 110px;
+    height: 110px;
+    border: 2px solid var(--color-dark);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-offset-sm);
+}
+
+.sleeve1 {
+    top: 0;
+    left: 0;
+    background: var(--color-muted-teal);
+    transform: rotate(-8deg);
+}
+
+.sleeve2 {
+    top: 12px;
+    left: 18px;
+    background: var(--color-retro-purple);
+    transform: rotate(4deg);
+}
+
+.sleeve3 {
+    top: 24px;
+    left: 8px;
+    background: var(--color-golden-yellow);
+    transform: rotate(-2deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vinylHole {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--color-dark);
+    border: 3px solid var(--color-cream);
+}
+
+.caption {
+    max-width: 280px;
+    font-size: 1.05rem;
+    line-height: 1.5;
+    text-align: center;
+    color: var(--color-text-muted);
+}
+
+.captionAccent {
+    font-family: var(--font-serif);
+    font-style: italic;
+    color: var(--color-dark);
+}

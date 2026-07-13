@@ -25,6 +25,7 @@ export interface PlaylistTrack {
   stage: LifeStage;
   spotifyUri: string;
   spotifyUrl: string;
+  imageUrl?: string;
 }
 
 export interface GeneratedPlaylist {

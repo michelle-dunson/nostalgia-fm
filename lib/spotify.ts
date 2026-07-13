@@ -4,6 +4,7 @@ export interface SpotifyTrackMatch {
   artist: string;
   uri: string;
   url: string;
+  imageUrl?: string;
 }
 
 interface SpotifyTokenResponse {
@@ -21,6 +22,9 @@ interface SpotifySearchResponse {
       external_urls: { spotify: string };
       is_playable?: boolean;
       artists: Array<{ name: string }>;
+      album: {
+        images: Array<{ url: string; width: number; height: number }>;
+      };
     }>;
   };
 }
@@ -120,6 +124,7 @@ function parseSearchResult(
     artist: track.artists[0]?.name ?? fallbackArtist,
     uri: track.uri,
     url: track.external_urls.spotify,
+    imageUrl: track.album.images[0]?.url,
   };
 }
 

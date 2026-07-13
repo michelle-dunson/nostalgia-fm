@@ -139,6 +139,7 @@ async function matchCandidates(
         stage,
         spotifyUri: spotifyMatch.uri,
         spotifyUrl: spotifyMatch.url,
+        imageUrl: spotifyMatch.imageUrl,
       });
     } catch {
       // Skip candidates that fail due to rate limits or transient API errors.

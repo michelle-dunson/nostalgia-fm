@@ -1,77 +1,100 @@
 .app {
-  width: 100%;
-  max-width: 640px;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
 }
 
-.card {
-  width: 100%;
-  padding: 2rem;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+.heroForm {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 2rem;
+    background: var(--color-surface);
+    border: 3px solid var(--color-dark);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-offset);
 }
 
-.cardTitle {
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin-bottom: 0.75rem;
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 0.5rem;
 }
 
-.cardDescription {
-  font-size: 0.95rem;
-  line-height: 1.65;
-  color: var(--color-text-muted);
-  margin-bottom: 1.75rem;
+.loadingBars {
+    width: 48px;
+    height: 40px;
+}
+
+.loadingText {
+    font-family: var(--font-serif);
+    font-size: 0.95rem;
+    font-style: italic;
+    color: var(--color-text-muted);
+    text-align: center;
 }
 
 .previewSection {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.statusMessage {
-  margin-top: 1rem;
-  font-size: 0.9rem;
-  font-style: italic;
-  text-align: center;
-  color: var(--color-accent-warm);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    scroll-margin-top: 1.5rem;
 }
 
 .errorMessage {
-  margin-top: 1rem;
-  font-size: 0.85rem;
-  text-align: center;
-  color: #e87c7c;
+    padding: 0.85rem 1.25rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: center;
+    color: var(--color-surface);
+    background: var(--color-dusty-coral);
+    border: 2px solid var(--color-dark);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-offset-sm);
 }
 
 .successMessage {
-  margin-top: 1rem;
-  font-size: 0.85rem;
-  text-align: center;
-  color: var(--color-spotify);
+    padding: 0.85rem 1.25rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: center;
+    color: var(--color-dark);
+    background: var(--color-olive);
+    background: color-mix(
+        in srgb,
+        var(--color-olive) 35%,
+        var(--color-surface)
+    );
+    border: 2px solid var(--color-dark);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-offset-sm);
 }
 
 .savedLink {
-  display: block;
-  text-align: center;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--color-spotify);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+    display: block;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--color-muted-teal);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    transition: color var(--transition-fast);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .savedLink:hover {
+        color: var(--color-burnt-orange);
+    }
 }
 
 @media (max-width: 480px) {
-  .card {
-    padding: 1.5rem;
-  }
+    .heroForm {
+        padding: 1.5rem 1rem;
+    }
 }

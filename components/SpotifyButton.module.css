@@ -1,38 +1,42 @@
 .wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
 }
 
-.button {
-  width: 100%;
-  max-width: 320px;
-  padding: 0.9rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #fff;
-  background: var(--color-spotify);
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: opacity 0.2s, transform 0.15s;
+.primary {
+    width: 100%;
+    max-width: 360px;
+    padding: 1.1rem 2rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--color-surface);
+    background: var(--color-spotify);
+    border: 3px solid var(--color-dark);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-offset);
+    cursor: pointer;
+    transition:
+        transform var(--transition-spring),
+        box-shadow var(--transition-spring);
 }
 
-.button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .button:not(:disabled):hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-  }
-}
+    .primary:not(:disabled):hover {
+        transform: translate(-2px, -2px) rotate(0.5deg);
+        box-shadow: var(--shadow-offset-hover);
+    }
 
-.hint {
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
-  text-align: center;
+    .primary:not(:disabled):active {
+        transform: translate(3px, 3px);
+        box-shadow: none;
+    }
 }
